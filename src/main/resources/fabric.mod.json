@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "benchmarked",
+  "version": "${version}",
+  "name": "BenchmarkED",
+  "description": "Benchmark Engine for Datapacks",
+  "authors": [
+    "Neylz"
+  ],
+  "contact": {
+    "website": "https://neylz.dev"
+  },
+  "license": "Apache-2.0",
+  "_environment": "server",
+  "entrypoints": {
+    "main": [
+      "dev.neylz.benchmarked.BenchmarkED"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
