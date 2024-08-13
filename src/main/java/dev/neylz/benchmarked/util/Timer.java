@@ -16,5 +16,8 @@ public class Timer {
         return this.endTime - this.startTime;
     }
 
+    public float getElapsedTimeMillis() {
+        return ((float) getElapsedTime()) / 1000000.0f;
+    }
     
 }
