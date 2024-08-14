@@ -31,7 +31,7 @@ public class BenchmarkFunction {
 
     private final Identifier id;
     private final Collection<CommandFunction<ServerCommandSource>> functions;
-    private final int iterations;
+    private int iterations;
 
 
     private ArrayList<Float> times = new ArrayList<Float>();
@@ -77,11 +77,13 @@ public class BenchmarkFunction {
 
     public void queueBenchmarkFunction() {
         Timer timer = new Timer();
-        for (int i = 0; i < iterations; i++) {
-            timer.start();
-            queueFunction();
-            timer.stop();
-            timer.registerLastTime();
+        timer.start();
+        queueFunction();
+        timer.stop();
+        timer.registerLastTime();
+        iterations--;
+        if (iterations <= 0) {
+            queuePrintResult();
         }
     }
 
@@ -134,7 +136,7 @@ public class BenchmarkFunction {
                         .append(Text.literal("mean").setStyle(STYLE_MEAN))
                         .append(Text.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
                         .append(Text.literal("σ").setStyle(STYLE_MEAN))
-                        .append(Text.literal("):\n  ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Text.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
 
                         .append(Text.literal(String.format("%.3f ms", getAverageTime())).setStyle(STYLE_MEAN))
                         .append(Text.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
@@ -144,7 +146,7 @@ public class BenchmarkFunction {
                         .append(Text.literal("min").setStyle(STYLE_MIN))
                         .append(Text.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
                         .append(Text.literal("max").setStyle(STYLE_MAX))
-                        .append(Text.literal("):\n  ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Text.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
                         .append(Text.literal(String.format("%.3f ms", getMinTime())).setStyle(STYLE_MIN))
                         .append(Text.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
                         .append(Text.literal(String.format("%.3f ms", getMaxTime())).setStyle(STYLE_MAX)),
@@ -197,9 +199,6 @@ public class BenchmarkFunction {
         return sum;
     }
 
-    public int getTimesSize() {
-        return times.size();
-    }
 
     public float getLastTime() {
         if (times.isEmpty()) {
@@ -215,6 +214,15 @@ public class BenchmarkFunction {
             sum += Math.pow(time - mean, 2);
         }
         return (float) Math.sqrt(sum / times.size());
+    }
+
+
+    public void debugMessage(String message) {
+        source.sendFeedback(() -> TextUtils.listOf(
+            Text.literal("Benchmarked: "),
+            Text.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
+            Text.literal("\n" + message).setStyle(TextUtils.DefaultStyle.RESET)
+        ), false);
     }
 
 

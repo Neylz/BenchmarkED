@@ -9,6 +9,8 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.neylz.benchmarked.BenchmarkED;
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunction;
+import dev.neylz.benchmarked.benchmarking.BenchmarkFunctionsHandler;
+import dev.neylz.benchmarked.util.TextUtils;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.ControlFlowAware;
 import net.minecraft.command.ExecutionControl;
@@ -85,10 +87,22 @@ public class BenchmarkCommand {
                 Text.of(function.getFunctionName())
             );
 
-            // queue the function
-            function.queueBenchmarkFunction();
 
-            function.queuePrintResult();
+
+            if (iterations == 1) {
+                function.queueBenchmarkFunction();
+            } else {
+                int finalIterations = iterations;
+                source.sendFeedback(
+                    () -> TextUtils.listOf(
+                        Text.literal(String.format("Benchmarking %s for %d iterations...", function.getFunctionName(), finalIterations))
+                    ), false
+                );
+
+                BenchmarkFunctionsHandler.registerBenchmark(function);
+//                function.queueBenchmarkFunction();
+
+            }
 
 
 
