@@ -3,19 +3,18 @@ package dev.neylz.benchmarked.benchmarking;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.datafixers.util.Pair;
 import dev.neylz.benchmarked.util.TextUtils;
-import net.minecraft.command.CommandFunctionAction;
-import net.minecraft.command.ExecutionControl;
-import net.minecraft.command.ReturnValueConsumer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.function.CommandFunction;
-import net.minecraft.server.function.MacroException;
-import net.minecraft.server.function.Procedure;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
 import java.util.ArrayList;
 import java.util.Collection;
+import net.minecraft.commands.CommandResultCallback;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.FunctionInstantiationException;
+import net.minecraft.commands.execution.ExecutionControl;
+import net.minecraft.commands.execution.tasks.CallFunction;
+import net.minecraft.commands.functions.CommandFunction;
+import net.minecraft.commands.functions.InstantiatedFunction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 
 
 public class BenchmarkFunction {
@@ -24,13 +23,13 @@ public class BenchmarkFunction {
     private final static Style STYLE_MAX = Style.EMPTY.withColor(0xe21955);
 
 
-    private final ServerCommandSource source;
-    private final ServerCommandSource executor;
-    private final CommandDispatcher<ServerCommandSource> commandDispatcher;
-    private final ExecutionControl<ServerCommandSource> control;
+    private final CommandSourceStack source;
+    private final CommandSourceStack executor;
+    private final CommandDispatcher<CommandSourceStack> commandDispatcher;
+    private final ExecutionControl<CommandSourceStack> control;
 
-    private final Identifier id;
-    private final Collection<CommandFunction<ServerCommandSource>> functions;
+    private final ResourceLocation id;
+    private final Collection<CommandFunction<CommandSourceStack>> functions;
     private int iterations;
 
 
@@ -38,14 +37,14 @@ public class BenchmarkFunction {
 
 
     public BenchmarkFunction(
-        ServerCommandSource source,
-        ExecutionControl<ServerCommandSource> control,
-        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> identifierCollectionPair,
+        CommandSourceStack source,
+        ExecutionControl<CommandSourceStack> control,
+        Pair<ResourceLocation, Collection<CommandFunction<CommandSourceStack>>> identifierCollectionPair,
         int iterations
     ) {
         this.source = source;
-        this.executor = source.withMaxLevel(2).withSilent();
-        this.commandDispatcher = source.getServer().getCommandFunctionManager().getDispatcher();
+        this.executor = source.withMaximumPermission(2).withSuppressedOutput();
+        this.commandDispatcher = source.getServer().getFunctions().getDispatcher();
         this.control = control;
 
         this.id = identifierCollectionPair.getFirst();
@@ -61,7 +60,7 @@ public class BenchmarkFunction {
         return id.getNamespace() + ":" + id.getPath();
     }
 
-    public Collection<CommandFunction<ServerCommandSource>> getFunctions() {
+    public Collection<CommandFunction<CommandSourceStack>> getFunctions() {
         return functions;
     }
 
@@ -90,21 +89,21 @@ public class BenchmarkFunction {
 
 
     private void queueFunction() {
-        for (final CommandFunction<ServerCommandSource> func : functions) {
+        for (final CommandFunction<CommandSourceStack> func : functions) {
             try {
-                Procedure<ServerCommandSource> procedure = func.withMacroReplaced(null, commandDispatcher);
-                control.enqueueAction(
-                        (new CommandFunctionAction<>(procedure, ReturnValueConsumer.EMPTY, false))
+                InstantiatedFunction<CommandSourceStack> procedure = func.instantiate(null, commandDispatcher);
+                control.queueNext(
+                        (new CallFunction<>(procedure, CommandResultCallback.EMPTY, false))
                         .bind(executor)
                 );
-            } catch (MacroException e) {
-                source.sendError(e.getMessage());
+            } catch (FunctionInstantiationException e) {
+                source.sendFailure(e.messageComponent());
             }
         }
     }
 
     public void queuePrintResult() {
-        control.enqueueAction((context, frame) -> {
+        control.queueNext((context, frame) -> {
             printResults();
         });
     }
@@ -112,47 +111,47 @@ public class BenchmarkFunction {
     private void printResults() {
 
         if (times.isEmpty()) {
-            source.sendError(TextUtils.listOf(
-                Text.literal("Benchmarked: "),
-                Text.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
-                Text.literal("\nError: No times recorded").setStyle(TextUtils.DefaultStyle.RED)
+            source.sendFailure(TextUtils.listOf(
+                Component.literal("Benchmarked: "),
+                Component.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
+                Component.literal("\nError: No times recorded").setStyle(TextUtils.DefaultStyle.RED)
             ));
 
         } else if (times.size() == 1) {
-            source.sendFeedback(
+            source.sendSuccess(
                 () -> TextUtils.listOf(
-                    Text.literal("Benchmarked: "),
-                    Text.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
-                    Text.literal("\nran in " + getLastTime() + "ms").setStyle(TextUtils.DefaultStyle.RESET)
+                    Component.literal("Benchmarked: "),
+                    Component.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
+                    Component.literal("\nran in " + getLastTime() + "ms").setStyle(TextUtils.DefaultStyle.RESET)
                 ),
                 false
             );
         } else {
-            source.sendFeedback(
+            source.sendSuccess(
                 () -> TextUtils.listOf(
-                    Text.literal("Benchmarked: "),
-                    Text.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
-                    Text.literal("\nTime (").setStyle(TextUtils.DefaultStyle.RESET)
-                        .append(Text.literal("mean").setStyle(STYLE_MEAN))
-                        .append(Text.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
-                        .append(Text.literal("σ").setStyle(STYLE_MEAN))
-                        .append(Text.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
+                    Component.literal("Benchmarked: "),
+                    Component.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
+                    Component.literal("\nTime (").setStyle(TextUtils.DefaultStyle.RESET)
+                        .append(Component.literal("mean").setStyle(STYLE_MEAN))
+                        .append(Component.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Component.literal("σ").setStyle(STYLE_MEAN))
+                        .append(Component.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
 
-                        .append(Text.literal(String.format("%.3f ms", getAverageTime())).setStyle(STYLE_MEAN))
-                        .append(Text.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
-                        .append(Text.literal(String.format("%.3f ms", getStandardDeviation())).setStyle(STYLE_MEAN)),
+                        .append(Component.literal(String.format("%.3f ms", getAverageTime())).setStyle(STYLE_MEAN))
+                        .append(Component.literal(" ± ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Component.literal(String.format("%.3f ms", getStandardDeviation())).setStyle(STYLE_MEAN)),
 
-                    Text.literal("\nRange (").setStyle(TextUtils.DefaultStyle.RESET)
-                        .append(Text.literal("min").setStyle(STYLE_MIN))
-                        .append(Text.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
-                        .append(Text.literal("max").setStyle(STYLE_MAX))
-                        .append(Text.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
-                        .append(Text.literal(String.format("%.3f ms", getMinTime())).setStyle(STYLE_MIN))
-                        .append(Text.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
-                        .append(Text.literal(String.format("%.3f ms", getMaxTime())).setStyle(STYLE_MAX)),
+                    Component.literal("\nRange (").setStyle(TextUtils.DefaultStyle.RESET)
+                        .append(Component.literal("min").setStyle(STYLE_MIN))
+                        .append(Component.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Component.literal("max").setStyle(STYLE_MAX))
+                        .append(Component.literal("):\n   ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Component.literal(String.format("%.3f ms", getMinTime())).setStyle(STYLE_MIN))
+                        .append(Component.literal(" … ").setStyle(TextUtils.DefaultStyle.RESET))
+                        .append(Component.literal(String.format("%.3f ms", getMaxTime())).setStyle(STYLE_MAX)),
 
-                    Text.literal("\nTotal: ").setStyle(TextUtils.DefaultStyle.RESET)
-                        .append(Text.literal(String.format("[%.3f ms | %d runs]", getSumTime(), times.size())).setStyle(TextUtils.DefaultStyle.GRAY))
+                    Component.literal("\nTotal: ").setStyle(TextUtils.DefaultStyle.RESET)
+                        .append(Component.literal(String.format("[%.3f ms | %d runs]", getSumTime(), times.size())).setStyle(TextUtils.DefaultStyle.GRAY))
 
 
                 ),
@@ -218,10 +217,10 @@ public class BenchmarkFunction {
 
 
     public void debugMessage(String message) {
-        source.sendFeedback(() -> TextUtils.listOf(
-            Text.literal("Benchmarked: "),
-            Text.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
-            Text.literal("\n" + message).setStyle(TextUtils.DefaultStyle.RESET)
+        source.sendSuccess(() -> TextUtils.listOf(
+            Component.literal("Benchmarked: "),
+            Component.literal(getFunctionName()).setStyle(TextUtils.DefaultStyle.GREEN),
+            Component.literal("\n" + message).setStyle(TextUtils.DefaultStyle.RESET)
         ), false);
     }
 
@@ -232,19 +231,19 @@ public class BenchmarkFunction {
         }
 
         public void start() {
-            control.enqueueAction((context, frame) -> {
+            control.queueNext((context, frame) -> {
                 super.start();
             });
         }
 
         public void stop() {
-            control.enqueueAction((context, frame) -> {
+            control.queueNext((context, frame) -> {
                 super.stop();
             });
         }
 
         public void registerLastTime() {
-            control.enqueueAction((context, frame) -> {
+            control.queueNext((context, frame) -> {
                 times.add(getElapsedTimeMillis());
             });
         }

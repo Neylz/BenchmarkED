@@ -21,5 +21,9 @@
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
     "minecraft": "${minecraft_version}"
-  }
+  },
+  "accessWidener": "benchmarked.accesswidener",
+  "mixins": [
+    "benchmarked.mixins.json"
+  ]
 }
