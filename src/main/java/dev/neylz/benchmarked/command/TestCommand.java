@@ -11,19 +11,19 @@ import dev.neylz.benchmarked.BenchmarkED;
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunction;
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunctionsHandler;
 import dev.neylz.benchmarked.util.TextUtils;
-import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
 import org.slf4j.Logger;
 
 public class TestCommand {
 
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
 
         dispatcher.register(
-            Commands.literal("test")
-                .requires(source -> {return source.hasPermission(3);})
+            CommandManager.literal("test")
+                .requires(source -> {return source.hasPermissionLevel(3);})
                 .executes(
                         context -> {
                             BenchmarkFunctionsHandler.runTick();

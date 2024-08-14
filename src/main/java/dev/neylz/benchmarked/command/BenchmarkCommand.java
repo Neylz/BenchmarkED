@@ -11,34 +11,34 @@ import dev.neylz.benchmarked.BenchmarkED;
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunction;
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunctionsHandler;
 import dev.neylz.benchmarked.util.TextUtils;
-import net.minecraft.commands.CommandBuildContext;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.item.FunctionArgument;
-import net.minecraft.commands.execution.ChainModifiers;
-import net.minecraft.commands.execution.CustomCommandExecutor;
-import net.minecraft.commands.execution.ExecutionControl;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.commands.FunctionCommand;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.ControlFlowAware;
+import net.minecraft.command.ExecutionControl;
+import net.minecraft.command.ExecutionFlags;
+import net.minecraft.command.argument.CommandFunctionArgumentType;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.FunctionCommand;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import org.slf4j.Logger;
 
 public class BenchmarkCommand {
 
     static final Logger LOGGER = BenchmarkED.getLOGGER();
     // DebugCommand message
-    static final SimpleCommandExceptionType NO_RETURN_RUN_EXCEPTION = new SimpleCommandExceptionType(Component.translatable("commands.debug.function.noReturnRun"));
+    static final SimpleCommandExceptionType NO_RETURN_RUN_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("commands.debug.function.noReturnRun"));
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
 
         dispatcher.register(
-            Commands.literal("benchmark")
-                .requires(source -> {return source.hasPermission(3);})
+            CommandManager.literal("benchmark")
+                .requires(source -> {return source.hasPermissionLevel(3);})
                 .then(
-                    Commands.argument("function", FunctionArgument.functions())
-                        .suggests(FunctionCommand.SUGGEST_FUNCTION)
+                    CommandManager.argument("function", CommandFunctionArgumentType.commandFunction())
+                        .suggests(FunctionCommand.SUGGESTION_PROVIDER)
                         .executes(new Command())
                     .then(
-                            Commands.argument("iterations", IntegerArgumentType.integer(1))
+                            CommandManager.argument("iterations", IntegerArgumentType.integer(1))
                                     .executes(new Command())
                     )
                 )
@@ -49,21 +49,21 @@ public class BenchmarkCommand {
 
 
 
-    private static class Command extends CustomCommandExecutor.WithErrorHandling<CommandSourceStack> implements CustomCommandExecutor.CommandAdapter<CommandSourceStack> {
+    private static class Command extends ControlFlowAware.Helper<ServerCommandSource> implements ControlFlowAware.Command<ServerCommandSource> {
 
         public void runGuarded(
-            CommandSourceStack source,
-            ContextChain<CommandSourceStack> contextChain,
-            ChainModifiers flags,
-            ExecutionControl<CommandSourceStack> control
+            ServerCommandSource source,
+            ContextChain<ServerCommandSource> contextChain,
+            ExecutionFlags flags,
+            ExecutionControl<ServerCommandSource> control
         ) throws CommandSyntaxException {
 
 
             // prevent ``return run benchmark ...``
-            if (flags.isReturn())
+            if (flags.isInsideReturnRun())
                 throw NO_RETURN_RUN_EXCEPTION.create();
 
-            CommandContext<CommandSourceStack> ctx = contextChain.getTopContext();
+            CommandContext<ServerCommandSource> ctx = contextChain.getTopContext();
 
             // grab the arguments back
             int iterations;
@@ -74,17 +74,17 @@ public class BenchmarkCommand {
             BenchmarkFunction function = new BenchmarkFunction(
                     source,
                     control,
-                    FunctionArgument.getFunctionCollection(ctx, "function"),
+                    CommandFunctionArgumentType.getIdentifiedFunctions(ctx, "function"),
                     iterations
             );
 
             // check for empty tags
             if (function.isFunctionEmpty()) throw (
                 new DynamicCommandExceptionType(
-                    o -> Component.nullToEmpty(String.format("No function found in the function tag #%s", o))
+                    o -> Text.of(String.format("No function found in the function tag #%s", o))
                 )
             ).create(
-                Component.nullToEmpty(function.getFunctionName())
+                Text.of(function.getFunctionName())
             );
 
 
@@ -93,9 +93,9 @@ public class BenchmarkCommand {
                 function.queueBenchmarkFunction();
             } else {
                 int finalIterations = iterations;
-                source.sendSuccess(
+                source.sendFeedback(
                     () -> TextUtils.listOf(
-                        Component.literal(String.format("Benchmarking %s for %d iterations...", function.getFunctionName(), finalIterations))
+                        Text.literal(String.format("Benchmarking %s for %d iterations...", function.getFunctionName(), finalIterations))
                     ), false
                 );
 

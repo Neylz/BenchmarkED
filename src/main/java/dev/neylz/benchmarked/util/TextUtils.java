@@ -1,17 +1,17 @@
 package dev.neylz.benchmarked.util;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
 
 public class TextUtils {
 
-    public final static Component EMPTY_TEXT = Component.literal("");
+    public final static Text EMPTY_TEXT = Text.literal("");
 
 
-    public static Component listOf(Component... texts) {
-        MutableComponent ft = Component.literal("");
-        for (Component text : texts) {
+    public static Text listOf(Text... texts) {
+        MutableText ft = Text.literal("");
+        for (Text text : texts) {
             ft.append(text);
         }
 
@@ -20,10 +20,10 @@ public class TextUtils {
 
 
     public static class DefaultStyle {
-        public final static Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false).withColor(0xFFFFFF).withInsertion("").withClickEvent(null).withHoverEvent(null);
+        public final static Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderline(false).withStrikethrough(false).withObfuscated(false).withColor(0xFFFFFF).withInsertion("").withClickEvent(null).withHoverEvent(null);
         public final static Style BOLD = Style.EMPTY.withBold(true);
         public final static Style ITALIC = Style.EMPTY.withItalic(true);
-        public final static Style UNDERLINED = Style.EMPTY.withUnderlined(true);
+        public final static Style UNDERLINED = Style.EMPTY.withUnderline(true);
         public final static Style STRIKETHROUGH = Style.EMPTY.withStrikethrough(true);
         public final static Style OBFUSCATED = Style.EMPTY.withObfuscated(true);
 
