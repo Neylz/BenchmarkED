@@ -47,6 +47,12 @@ public class FunctionBenchmarkHandler {
         return 0;
     }
 
+    public static int deregisterAllFunctions() {
+        int count = trackedFunctions.size();
+        trackedFunctions.clear();
+        return count;
+    }
+
 
     private static boolean isFunctionTracked(String id) {
         for (BenchmarkFunction fn : trackedFunctions) {

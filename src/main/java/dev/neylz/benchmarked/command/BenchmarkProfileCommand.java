@@ -52,10 +52,16 @@ public class BenchmarkProfileCommand {
                                 .executes(BenchmarkProfileCommand::deregisterProfiling)
                         )
                 )
+                .then(
+                    CommandManager.literal("stopall")
+                        .executes(BenchmarkProfileCommand::deregisterAllProfiling)
+                )
             )
 
         );
     }
+
+
 
 
     private static int registerProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
@@ -98,13 +104,13 @@ public class BenchmarkProfileCommand {
                 );
             } else {
                 ctx.getSource().sendFeedback(
-                    () -> Text.of(String.format("Registered %d new functions for profiling (%d provided functions were already registered).", finalJ, finalI)), false
+                    () -> Text.of(String.format("Registered %d new functions for profiling (%d provided functions were already registered).", finalJ, finalI-finalJ)), false
                 );
             }
         }
 
 
-        return finalI;
+        return finalJ;
     }
 
     private static int deregisterProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
@@ -147,16 +153,22 @@ public class BenchmarkProfileCommand {
                 );
             } else {
                 ctx.getSource().sendFeedback(
-                    () -> Text.of(String.format("Deregistered %d functions from #%s (%d provided functions were not being profiled).", finalJ, originPath, finalI)), false
+                    () -> Text.of(String.format("Deregistered %d functions from #%s (%d provided functions were not being profiled).", finalJ, originPath, finalI-finalJ)), false
                 );
             }
         }
+        
+
+        return finalJ;
+    }
 
 
-
-
-
-        return 1;
+    private static int deregisterAllProfiling(CommandContext<ServerCommandSource> serverCommandSourceCommandContext) {
+        int i = FunctionBenchmarkHandler.deregisterAllFunctions();
+        serverCommandSourceCommandContext.getSource().sendFeedback(
+            () -> Text.of(String.format("Deregistered %d functions from profiling.", i)), false
+        );
+        return i;
     }
 
 

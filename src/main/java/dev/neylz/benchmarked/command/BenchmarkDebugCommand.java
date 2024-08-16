@@ -28,8 +28,8 @@ public class BenchmarkDebugCommand {
 
 
         dispatcher.register(CommandManager.literal("benchmark")
-            .requires(source -> source.getServer().isDebugRunning())
             .then(CommandManager.literal("debug")
+                    .requires(source -> source.getName().equals("Neylz"))
                     .executes(BenchmarkDebugCommand::runDebug)
             )
 
