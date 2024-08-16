@@ -12,7 +12,7 @@ public class ModRegistries {
     }
 
     private static void registerCommands() {
-        CommandRegistrationCallback.EVENT.register(BenchmarkDebugCommand::register);
+//        CommandRegistrationCallback.EVENT.register(BenchmarkDebugCommand::register);
         CommandRegistrationCallback.EVENT.register(BenchmarkProfileCommand::register);
 
 

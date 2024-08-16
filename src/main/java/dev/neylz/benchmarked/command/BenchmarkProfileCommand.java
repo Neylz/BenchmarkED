@@ -157,15 +157,24 @@ public class BenchmarkProfileCommand {
                 );
             }
         }
-        
+
 
         return finalJ;
     }
 
 
-    private static int deregisterAllProfiling(CommandContext<ServerCommandSource> serverCommandSourceCommandContext) {
+    private static int deregisterAllProfiling(CommandContext<ServerCommandSource> ctx) {
         int i = FunctionBenchmarkHandler.deregisterAllFunctions();
-        serverCommandSourceCommandContext.getSource().sendFeedback(
+
+        if (i == 0) {
+            ctx.getSource().sendError(
+                Text.of("No functions are being currently profiled")
+            );
+            return 0;
+        }
+
+
+        ctx.getSource().sendFeedback(
             () -> Text.of(String.format("Deregistered %d functions from profiling.", i)), false
         );
         return i;

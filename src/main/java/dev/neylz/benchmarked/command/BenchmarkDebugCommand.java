@@ -38,9 +38,9 @@ public class BenchmarkDebugCommand {
 
     private static int runDebug(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         StringBuilder str = new StringBuilder();
-        for (String n : FunctionBenchmarkHandler.getTrackedFunctionsNames()) {
-            str.append(n).append(", ");
-        }
+//        for (String n : FunctionBenchmarkHandler.getTrackedFunctionsNames()) {
+//            str.append(n).append(", ");
+//        }
 
         ctx.getSource().sendFeedback(
                () -> Text.of(String.format("Loaded: %s", str)), false)

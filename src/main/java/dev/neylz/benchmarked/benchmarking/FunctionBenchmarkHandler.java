@@ -81,7 +81,7 @@ public class FunctionBenchmarkHandler {
 
 
     @NotNull
-    public static ArrayList<String> getTrackedFunctionsNames() {
+    private static ArrayList<String> getTrackedFunctionsNames() {
         ArrayList<String> identifiers = new ArrayList<>();
 
         for (BenchmarkFunction fn : trackedFunctions) {
