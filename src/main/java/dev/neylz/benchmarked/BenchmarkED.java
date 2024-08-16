@@ -4,7 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static dev.neylz.benchmarked.util.ModRegisteries.registerAll;
+import static dev.neylz.benchmarked.util.ModRegistries.registerAll;
 
 public class BenchmarkED implements ModInitializer {
     public static final String MOD_ID = "benchmarked";
