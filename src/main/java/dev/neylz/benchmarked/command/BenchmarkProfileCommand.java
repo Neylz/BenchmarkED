@@ -6,12 +6,15 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
+import dev.neylz.benchmarked.access.IdentifierAccess;
+import dev.neylz.benchmarked.benchmarking.FunctionBenchmarkHandler;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.CommandFunctionArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.FunctionCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.function.CommandFunction;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.Collection;
@@ -28,25 +31,25 @@ public class BenchmarkProfileCommand {
 
 
         dispatcher.register(CommandManager.literal("benchmark")
-            .requires(source -> {return source.hasPermissionLevel(3);})
+            .requires(source -> source.hasPermissionLevel(3))
             .then(CommandManager.literal("profile")
                 .then(
-                    FUNCTION_ARGUMENT
-                        .executes(BenchmarkProfileCommand::toggleProfiler)
+                    CommandManager.literal("start")
                         .then(
-                            CommandManager.literal("start")
-                                .executes(BenchmarkProfileCommand::startProfiler)
-                                .then(TICK_COUNT_ARGUMENT)
+                            FUNCTION_ARGUMENT
+                                .executes(BenchmarkProfileCommand::registerProfiling)
+                            .then(
+                                TICK_COUNT_ARGUMENT
+                                .executes(BenchmarkProfileCommand::registerProfiling)
+                            )
                         )
+                )
+                .then(
+                    CommandManager.literal("stop")
                         .then(
-                            CommandManager.literal("stop")
-                                .executes(BenchmarkProfileCommand::stopProfiler)
-                                .then(TICK_COUNT_ARGUMENT)
-                        )
-                        .then(
-                            CommandManager.literal("toggle")
-                                .executes(BenchmarkProfileCommand::toggleProfiler)
-                                .then(TICK_COUNT_ARGUMENT)
+                            CommandManager.argument("function", CommandFunctionArgumentType.commandFunction())
+                                .suggests(FunctionBenchmarkHandler.RUNNING_FUNCTIONS_SUGGESTIONS)
+                                .executes(BenchmarkProfileCommand::deregisterProfiling)
                         )
                 )
             )
@@ -55,43 +58,120 @@ public class BenchmarkProfileCommand {
     }
 
 
-    private static int startProfiler(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+    private static int registerProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
 
         Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
         int tickCount = getProvidedTickCount(ctx);
+
+        int i = 0, j = 0;
+        String id = "";
+        for (CommandFunction<ServerCommandSource> fn : functions.getSecond()) {
+
+            id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
+            j += FunctionBenchmarkHandler.registerFunction(id, tickCount);
+
+            i++;
+        }
+
+        String finalId = id;
+        int finalI = i, finalJ = j;
+        if (finalJ == 0) {
+            if (finalI == 0) {
+                ctx.getSource().sendError(
+                    Text.of("No functions provided")
+                );
+            } else {
+                ctx.getSource().sendError(
+                    Text.of("Provided function(s) are already being profiled")
+                );
+            }
+            return 0;
+        } else if (i == 1) {
+            ctx.getSource().sendFeedback(
+                () -> Text.of(String.format("%s registered for profiling with success.", finalId)), false
+            );
+        } else {
+            String originPath = ((IdentifierAccess) (Object) functions.getFirst()).benchmarked$getNamespacedPath();
+            if (finalJ == finalI) {
+                ctx.getSource().sendFeedback(
+                        () -> Text.of(String.format("Registered %d functions from #%s.", finalI, originPath)), false
+                );
+            } else {
+                ctx.getSource().sendFeedback(
+                    () -> Text.of(String.format("Registered %d new functions for profiling (%d provided functions were already registered).", finalJ, finalI)), false
+                );
+            }
+        }
+
+
+        return finalI;
+    }
+
+    private static int deregisterProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+
+        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
+
+
+        int i = 0, j = 0;
+        String id = "";
+        for (CommandFunction<ServerCommandSource> fn : functions.getSecond()) {
+
+            id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
+            j += FunctionBenchmarkHandler.deregisterFunction(id);
+
+            i++;
+        }
+
+        int finalI = i, finalJ = j;
+        if (finalJ == 0) {
+            if (finalI == 0) {
+                ctx.getSource().sendError(
+                    Text.of("No functions provided")
+                );
+            } else {
+                ctx.getSource().sendError(
+                    Text.of("None of the provided function(s) were registered for profiling")
+                );
+            }
+            return 0;
+        } else if (i == 1) {
+            String finalId = id;
+            ctx.getSource().sendFeedback(
+                () -> Text.of(String.format("%s deregistered from profiling with success.", finalId)), false
+            );
+        } else {
+            String originPath = ((IdentifierAccess) (Object) functions.getFirst()).benchmarked$getNamespacedPath();
+            if (finalJ == finalI) {
+                ctx.getSource().sendFeedback(
+                        () -> Text.of(String.format("Deregistered %d functions from #%s.", finalI, originPath)), false
+                );
+            } else {
+                ctx.getSource().sendFeedback(
+                    () -> Text.of(String.format("Deregistered %d functions from #%s (%d provided functions were not being profiled).", finalJ, originPath, finalI)), false
+                );
+            }
+        }
+
+
 
 
 
         return 1;
     }
 
-    private static int stopProfiler(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-
-        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
-        int tickCount = getProvidedTickCount(ctx);
-
-
-
-        return 1;
-    }
-
-    private static int toggleProfiler(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-
-        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
-        int tickCount = getProvidedTickCount(ctx);
-
-
-
-        return 1;
-    }
 
     private static Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> getProvidedFunctions(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         return CommandFunctionArgumentType.getIdentifiedFunctions(ctx, "function");
     }
 
     private static int getProvidedTickCount(CommandContext<ServerCommandSource> ctx) {
-        int tc = IntegerArgumentType.getInteger(ctx, "ticks");
-        return tc <= 0 ? -1 : tc;
+        int tc;
+        try {
+            tc = IntegerArgumentType.getInteger(ctx, "ticks");
+        } catch (IllegalArgumentException e) {
+            tc = -1;
+        }
+        return tc;
     }
 
 

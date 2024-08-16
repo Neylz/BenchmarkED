@@ -1,22 +1,9 @@
 package dev.neylz.benchmarked.benchmarking;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.datafixers.util.Pair;
-import dev.neylz.benchmarked.access.IdentifierAccess;
-import dev.neylz.benchmarked.util.TextUtils;
 import java.util.ArrayList;
-import java.util.Collection;
 
-import dev.neylz.benchmarked.util.Timer;
-import net.minecraft.command.CommandFunctionAction;
-import net.minecraft.command.ExecutionControl;
-import net.minecraft.command.ReturnValueConsumer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.function.CommandFunction;
-import net.minecraft.server.function.MacroException;
-import net.minecraft.server.function.Procedure;
+import dev.neylz.benchmarked.access.IdentifierAccess;
 import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 
@@ -26,18 +13,20 @@ public class BenchmarkFunction {
     private final static Style STYLE_MAX = Style.EMPTY.withColor(0xe21955);
 
 
-    private final String idNamespace;
+    private final String id;
     private int lifeTime;
     private final ArrayList<Float> times = new ArrayList<>();
     private final BenchmarkProfiler profiler = new BenchmarkProfiler();
 
 
-    public BenchmarkFunction(String idNamespace) {
-        this.idNamespace = idNamespace;
+    public BenchmarkFunction(String id, int lifeTime) {
+        this.id = id;
+        this.lifeTime = lifeTime;
     }
 
+
     public String getNamespacedPath() {
-        return idNamespace;
+        return id;
     }
 
     public void startProfiling() {
@@ -167,9 +156,7 @@ public class BenchmarkFunction {
         return (float) Math.sqrt(sum / times.size());
     }
 
-    public String getFunctionName() {
-        return idNamespace;
-    }
+
 //
 //
 //    public void debugMessage(String message) {

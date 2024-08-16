@@ -11,6 +11,7 @@ import net.minecraft.server.command.AbstractServerCommandSource;
 import net.minecraft.server.command.FunctionCommand;
 import net.minecraft.server.function.CommandFunction;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,7 +24,7 @@ public abstract class FunctionCommandMixin {
 
     @Inject(method = "enqueueFunction", at = @At("HEAD"))
     private static <T extends AbstractServerCommandSource<T>> void startProfiler(
-            @Nullable NbtCompound args, ExecutionControl<T> control, CommandDispatcher<T> dispatcher, T source, CommandFunction<T> function, Identifier id, ReturnValueConsumer returnValueConsumer, boolean propagateReturn, CallbackInfo ci
+            @Nullable NbtCompound args, @NotNull ExecutionControl<T> control, CommandDispatcher<T> dispatcher, T source, CommandFunction<T> function, Identifier id, ReturnValueConsumer returnValueConsumer, boolean propagateReturn, CallbackInfo ci
     ) throws CommandSyntaxException {
         control.enqueueAction(
                 (context, frame) -> {
@@ -36,7 +37,7 @@ public abstract class FunctionCommandMixin {
 
     @Inject(method = "enqueueFunction", at = @At("TAIL"))
     private static <T extends AbstractServerCommandSource<T>> void stopProfiler(
-            @Nullable NbtCompound args, ExecutionControl<T> control, CommandDispatcher<T> dispatcher, T source, CommandFunction<T> function, Identifier id, ReturnValueConsumer returnValueConsumer, boolean propagateReturn, CallbackInfo ci
+            @Nullable NbtCompound args, @NotNull ExecutionControl<T> control, CommandDispatcher<T> dispatcher, T source, CommandFunction<T> function, Identifier id, ReturnValueConsumer returnValueConsumer, boolean propagateReturn, CallbackInfo ci
     ) throws CommandSyntaxException {
         control.enqueueAction(
                 (context, frame) -> {
