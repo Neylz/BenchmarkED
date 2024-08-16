@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import dev.neylz.benchmarked.access.IdentifierAccess;
 import dev.neylz.benchmarked.benchmarking.FunctionBenchmarkHandler;
+import dev.neylz.benchmarked.util.CommandArgumentsGetter;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.CommandFunctionArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -66,8 +67,8 @@ public class BenchmarkProfileCommand {
 
     private static int registerProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
 
-        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
-        int tickCount = getProvidedTickCount(ctx);
+        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
+        int tickCount = CommandArgumentsGetter.getInteger(ctx, "ticks", -1);
 
         int i = 0, j = 0;
         String id = "";
@@ -115,7 +116,7 @@ public class BenchmarkProfileCommand {
 
     private static int deregisterProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
 
-        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = getProvidedFunctions(ctx);
+        Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
 
 
         int i = 0, j = 0;
@@ -178,21 +179,6 @@ public class BenchmarkProfileCommand {
             () -> Text.of(String.format("Deregistered %d functions from profiling.", i)), false
         );
         return i;
-    }
-
-
-    private static Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> getProvidedFunctions(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        return CommandFunctionArgumentType.getIdentifiedFunctions(ctx, "function");
-    }
-
-    private static int getProvidedTickCount(CommandContext<ServerCommandSource> ctx) {
-        int tc;
-        try {
-            tc = IntegerArgumentType.getInteger(ctx, "ticks");
-        } catch (IllegalArgumentException e) {
-            tc = -1;
-        }
-        return tc;
     }
 
 
