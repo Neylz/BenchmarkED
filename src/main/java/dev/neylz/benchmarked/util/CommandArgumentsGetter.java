@@ -1,6 +1,7 @@
 package dev.neylz.benchmarked.util;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
@@ -8,6 +9,7 @@ import net.minecraft.command.argument.CommandFunctionArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.function.CommandFunction;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -34,7 +36,28 @@ public class CommandArgumentsGetter {
         return r;
     }
 
+    public static String getString(CommandContext<ServerCommandSource> context, String name) {
+        try {
+            return StringArgumentType.getString(context, name);
+        } catch (IllegalArgumentException e) {
+            return "";
+        }
+    }
+
+    public static String getString(CommandContext<ServerCommandSource> context, String name, String defaultValue) {
+        try {
+            return StringArgumentType.getString(context, name);
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
+    }
+
+    @Nullable
     public static Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> getFunction(CommandContext<ServerCommandSource> ctx, String name) throws CommandSyntaxException {
-        return CommandFunctionArgumentType.getIdentifiedFunctions(ctx, name);
+        try {
+            return CommandFunctionArgumentType.getIdentifiedFunctions(ctx, name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

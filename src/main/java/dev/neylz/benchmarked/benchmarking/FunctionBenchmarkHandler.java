@@ -1,6 +1,7 @@
 package dev.neylz.benchmarked.benchmarking;
 
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import dev.neylz.benchmarked.benchmarking.results.BenchmarkFunctionResult;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.NotNull;
@@ -40,16 +41,24 @@ public class FunctionBenchmarkHandler {
     }
 
     public static int deregisterFunction(String id) {
-        if (isFunctionTracked(id)) {
-            trackedFunctions.remove(getFunction(id));
-            return 1;
+        BenchmarkFunction fn = getFunction(id);
+        if (fn == null) return 0;
+
+        try {
+            new BenchmarkFunctionResult(fn);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return 0;
+        return trackedFunctions.remove(fn) ? 1 : 0;
+
     }
 
     public static int deregisterAllFunctions() {
         int count = trackedFunctions.size();
-        trackedFunctions.clear();
+        while (!trackedFunctions.isEmpty()) {
+            deregisterFunction(trackedFunctions.get(0).getNamespacedPath());
+            count++;
+        }
         return count;
     }
 
@@ -71,10 +80,13 @@ public class FunctionBenchmarkHandler {
 
 
     public static void postTick() {
-        for (Iterator<BenchmarkFunction> iterator = trackedFunctions.iterator(); iterator.hasNext(); ) {
-            boolean isExpired = iterator.next().isExpired();
-            if ( isExpired ) {
-                iterator.remove();
+        Iterator<BenchmarkFunction> it = trackedFunctions.iterator();
+        while (it.hasNext()) {
+            BenchmarkFunction fn = it.next();
+            fn.decreaseLifetime();
+            if (fn.isExpired()) {
+                new BenchmarkFunctionResult(fn);
+                it.remove();
             }
         }
     }

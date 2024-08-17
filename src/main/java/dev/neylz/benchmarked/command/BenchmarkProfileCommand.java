@@ -114,18 +114,21 @@ public class BenchmarkProfileCommand {
         return finalJ;
     }
 
-    private static int deregisterProfiling(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+    @SuppressWarnings("unchecked")
+    private static int deregisterProfiling(
+            CommandContext<ServerCommandSource> ctx
+    ) throws CommandSyntaxException {
 
         Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
 
 
         int i = 0, j = 0;
         String id = "";
-        for (CommandFunction<ServerCommandSource> fn : functions.getSecond()) {
 
+        while (!functions.getSecond().isEmpty()) {
+            CommandFunction<ServerCommandSource> fn = (CommandFunction<ServerCommandSource>) functions.getSecond().toArray()[0];
             id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
             j += FunctionBenchmarkHandler.deregisterFunction(id);
-
             i++;
         }
 

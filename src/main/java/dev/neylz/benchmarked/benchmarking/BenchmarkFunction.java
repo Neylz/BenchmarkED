@@ -1,7 +1,9 @@
 package dev.neylz.benchmarked.benchmarking;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+import com.sun.jdi.ArrayReference;
 import dev.neylz.benchmarked.access.IdentifierAccess;
 import net.minecraft.text.Style;
 import net.minecraft.util.Identifier;
@@ -154,6 +156,11 @@ public class BenchmarkFunction {
             sum += (float) Math.pow(time - mean, 2);
         }
         return (float) Math.sqrt(sum / times.size());
+    }
+
+
+    public ArrayList<Float> getTimes() {
+        return times;
     }
 
 
