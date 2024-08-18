@@ -73,7 +73,7 @@ public class BenchmarkProfileCommand {
 
         if (functions == null) {
             ctx.getSource().sendError(
-                Text.of("No functions provided")
+                Text.of("No function provided")
             );
             return 0;
         }
@@ -125,7 +125,7 @@ public class BenchmarkProfileCommand {
         Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
         if (functions == null) {
             ctx.getSource().sendError(
-                Text.of("No functions provided")
+                Text.of("No function provided")
             );
             return 0;
         }
@@ -133,13 +133,10 @@ public class BenchmarkProfileCommand {
         int triedToRemoveCount = 0, removeCount = 0;
         String id = "";
 
-
-        Iterator<CommandFunction<ServerCommandSource>> it = functions.getSecond().iterator();
-        while (it.hasNext()) {
-            CommandFunction<ServerCommandSource> fn = it.next();
+        
+        for (CommandFunction<ServerCommandSource> fn : functions.getSecond()) {
             id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
             removeCount += FunctionBenchmarkHandler.deregisterFunction(id);
-            it.remove();
             triedToRemoveCount++;
         }
 
@@ -179,7 +176,7 @@ public class BenchmarkProfileCommand {
 
         if (i == 0) {
             ctx.getSource().sendError(
-                Text.of("No functions are being currently profiled")
+                Text.of("No function are being currently profiled")
             );
             return 0;
         }

@@ -30,13 +30,9 @@ public class BenchmarkFunctionResult {
         this.timeStamp = new Date();
 
         this.benchmarkFileName = String.format(
-                "%s - %s+%d.bed",
+                "%s - %s - %d.bed",
                 functionName,
-                IntCharEncoder.encode(
-                    Long.parseUnsignedLong(
-                        new SimpleDateFormat("yyyyMMddHHmmss").format(timeStamp)
-                    )
-                ),
+                new SimpleDateFormat("yyyy-dd-MM_HH-mm-ss").format(timeStamp),
                 StoredBenchmarkResults.getFunctionsCount(functionName) + 1
         );
 
