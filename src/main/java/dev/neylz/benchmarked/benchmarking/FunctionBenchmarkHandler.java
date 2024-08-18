@@ -43,7 +43,7 @@ public class FunctionBenchmarkHandler {
     public static int deregisterFunction(String id) {
         BenchmarkFunction fn = getFunction(id);
         if (fn == null) return 0;
-        
+
         new BenchmarkFunctionResult(fn);
 
         return trackedFunctions.remove(fn) ? 1 : 0;
@@ -54,7 +54,6 @@ public class FunctionBenchmarkHandler {
         int count = trackedFunctions.size();
         while (!trackedFunctions.isEmpty()) {
             deregisterFunction(trackedFunctions.get(0).getNamespacedPath());
-            count++;
         }
         return count;
     }
