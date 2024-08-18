@@ -1,6 +1,7 @@
 package dev.neylz.benchmarked;
 
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -23,5 +23,7 @@ public class ModRegistries {
 
     private static void registerEvents() {
         ServerTickEvents.END_SERVER_TICK.register(new EndServerTickEvent());
+
+
     }
 }
