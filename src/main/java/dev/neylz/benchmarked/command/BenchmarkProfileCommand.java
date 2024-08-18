@@ -19,6 +19,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 public class BenchmarkProfileCommand {
     private final static ArgumentBuilder<ServerCommandSource, ?> FUNCTION_ARGUMENT =
@@ -70,100 +71,106 @@ public class BenchmarkProfileCommand {
         Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
         int tickCount = CommandArgumentsGetter.getInteger(ctx, "ticks", -1);
 
-        int i = 0, j = 0;
+        if (functions == null) {
+            ctx.getSource().sendError(
+                Text.of("No functions provided")
+            );
+            return 0;
+        }
+
+
+        int triedToRemoveCount = 0, removeCount = 0;
         String id = "";
         for (CommandFunction<ServerCommandSource> fn : functions.getSecond()) {
 
             id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
-            j += FunctionBenchmarkHandler.registerFunction(id, tickCount);
+            removeCount += FunctionBenchmarkHandler.registerFunction(id, tickCount);
 
-            i++;
+            triedToRemoveCount++;
         }
 
         String finalId = id;
-        int finalI = i, finalJ = j;
-        if (finalJ == 0) {
-            if (finalI == 0) {
-                ctx.getSource().sendError(
-                    Text.of("No functions provided")
-                );
-            } else {
-                ctx.getSource().sendError(
-                    Text.of("Provided function(s) are already being profiled")
-                );
-            }
+        int finalTriedToRemoveCount = triedToRemoveCount, finalRemoveCount = removeCount;
+        if (finalRemoveCount == 0) {
+            // case with no functions provided already handled
+            ctx.getSource().sendError(
+                Text.of("Provided function(s) are already being profiled")
+            );
             return 0;
-        } else if (i == 1) {
+        } else if (triedToRemoveCount == 1) {
             ctx.getSource().sendFeedback(
                 () -> Text.of(String.format("%s registered for profiling with success.", finalId)), false
             );
         } else {
             String originPath = ((IdentifierAccess) (Object) functions.getFirst()).benchmarked$getNamespacedPath();
-            if (finalJ == finalI) {
+            if (finalRemoveCount == finalTriedToRemoveCount) {
                 ctx.getSource().sendFeedback(
-                        () -> Text.of(String.format("Registered %d functions from #%s.", finalI, originPath)), false
+                        () -> Text.of(String.format("Registered %d functions from #%s.", finalTriedToRemoveCount, originPath)), false
                 );
             } else {
                 ctx.getSource().sendFeedback(
-                    () -> Text.of(String.format("Registered %d new functions for profiling (%d provided functions were already registered).", finalJ, finalI-finalJ)), false
+                    () -> Text.of(String.format("Registered %d new functions for profiling (%d provided functions were already registered).", finalRemoveCount, finalTriedToRemoveCount-finalRemoveCount)), false
                 );
             }
         }
 
 
-        return finalJ;
+        return finalRemoveCount;
     }
 
-    @SuppressWarnings("unchecked")
     private static int deregisterProfiling(
             CommandContext<ServerCommandSource> ctx
     ) throws CommandSyntaxException {
 
         Pair<Identifier, Collection<CommandFunction<ServerCommandSource>>> functions = CommandArgumentsGetter.getFunction(ctx, "function");
-
-
-        int i = 0, j = 0;
-        String id = "";
-
-        while (!functions.getSecond().isEmpty()) {
-            CommandFunction<ServerCommandSource> fn = (CommandFunction<ServerCommandSource>) functions.getSecond().toArray()[0];
-            id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
-            j += FunctionBenchmarkHandler.deregisterFunction(id);
-            i++;
+        if (functions == null) {
+            ctx.getSource().sendError(
+                Text.of("No functions provided")
+            );
+            return 0;
         }
 
-        int finalI = i, finalJ = j;
-        if (finalJ == 0) {
-            if (finalI == 0) {
-                ctx.getSource().sendError(
-                    Text.of("No functions provided")
-                );
-            } else {
-                ctx.getSource().sendError(
-                    Text.of("None of the provided function(s) were registered for profiling")
-                );
-            }
+        int triedToRemoveCount = 0, removeCount = 0;
+        String id = "";
+
+
+        Iterator<CommandFunction<ServerCommandSource>> it = functions.getSecond().iterator();
+        while (it.hasNext()) {
+            CommandFunction<ServerCommandSource> fn = it.next();
+            id = ((IdentifierAccess) (Object) fn.id()).benchmarked$getNamespacedPath();
+            removeCount += FunctionBenchmarkHandler.deregisterFunction(id);
+            it.remove();
+            triedToRemoveCount++;
+        }
+
+
+        int finalTriedToRemoveCount = triedToRemoveCount, finalRemoveCount = removeCount;
+        if (finalRemoveCount == 0) {
+            // case with no functions provided already handled
+            ctx.getSource().sendError(
+                Text.of("None of the provided function(s) were registered for profiling")
+            );
             return 0;
-        } else if (i == 1) {
+        } else if (triedToRemoveCount == 1) {
             String finalId = id;
             ctx.getSource().sendFeedback(
                 () -> Text.of(String.format("%s deregistered from profiling with success.", finalId)), false
             );
         } else {
             String originPath = ((IdentifierAccess) (Object) functions.getFirst()).benchmarked$getNamespacedPath();
-            if (finalJ == finalI) {
+            if (finalRemoveCount == finalTriedToRemoveCount) {
                 ctx.getSource().sendFeedback(
-                        () -> Text.of(String.format("Deregistered %d functions from #%s.", finalI, originPath)), false
+                        () -> Text.of(String.format("Deregistered %d functions from #%s.", finalTriedToRemoveCount, originPath)), false
                 );
             } else {
                 ctx.getSource().sendFeedback(
-                    () -> Text.of(String.format("Deregistered %d functions from #%s (%d provided functions were not being profiled).", finalJ, originPath, finalI-finalJ)), false
+                    () -> Text.of(String.format("Deregistered %d functions from #%s (%d provided functions were not being profiled).", finalRemoveCount, originPath, finalTriedToRemoveCount-finalRemoveCount)), false
                 );
             }
         }
 
 
-        return finalJ;
+        return finalRemoveCount;
     }
 
 

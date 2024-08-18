@@ -1,13 +1,19 @@
 package dev.neylz.benchmarked.benchmarking.results;
 
 import dev.neylz.benchmarked.benchmarking.BenchmarkFunction;
+import dev.neylz.benchmarked.util.IntCharEncoder;
+import net.minecraft.server.MinecraftServer;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class BenchmarkFunctionResult {
 
     private final String functionName;
     private final String benchmarkFileName;
+
+    private final Date timeStamp;
 
     private final int calls;
     private final ArrayList<Float> times;
@@ -21,9 +27,18 @@ public class BenchmarkFunctionResult {
         this.calls = times.size();
         this.times = times;
 
-//        this.timeStamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        this.timeStamp = new Date();
 
-        this.benchmarkFileName = String.format("%s - %d.bed", functionName, StoredBenchmarkResults.getFunctionsCount(functionName) + 1);
+        this.benchmarkFileName = String.format(
+                "%s - %s+%d.bed",
+                functionName,
+                IntCharEncoder.encode(
+                    Long.parseUnsignedLong(
+                        new SimpleDateFormat("yyyyMMddHHmmss").format(timeStamp)
+                    )
+                ),
+                StoredBenchmarkResults.getFunctionsCount(functionName) + 1
+        );
 
         StoredBenchmarkResults.storeResult(this);
     }

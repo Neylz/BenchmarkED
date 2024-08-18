@@ -43,12 +43,9 @@ public class FunctionBenchmarkHandler {
     public static int deregisterFunction(String id) {
         BenchmarkFunction fn = getFunction(id);
         if (fn == null) return 0;
+        
+        new BenchmarkFunctionResult(fn);
 
-        try {
-            new BenchmarkFunctionResult(fn);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return trackedFunctions.remove(fn) ? 1 : 0;
 
     }
